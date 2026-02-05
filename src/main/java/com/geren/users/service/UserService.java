@@ -2,6 +2,7 @@ package com.geren.users.service;
 
 import com.geren.users.model.User;
 import com.geren.users.model.dto.UserDTO;
+import com.geren.users.model.dto.UserResponseDTO;
 
 import java.util.List;
 import java.util.UUID;
