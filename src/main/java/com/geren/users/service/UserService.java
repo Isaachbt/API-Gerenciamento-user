@@ -11,9 +11,10 @@ public interface UserService {
 
     void createUser(UserDTO userDTO);
     String login(LoginDTO loginDTO);
-    String generateResetToken(UUID id);
+    void generateResetToken(String email);
+    public void resetPassword(String token, String newPassword);
     List<User> getAllUsers();
     User getUserById(UUID id);
     User updateUser(UUID id, UserDTO userDTO);
-    void deleteUser(UUID id);
+    void deleteUser();
 }

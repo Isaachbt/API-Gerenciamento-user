@@ -2,15 +2,13 @@ package com.geren.users.service.imp;
 
 import com.geren.users.dto.LoginDTO;
 import com.geren.users.enums.RoleEnum;
-import com.geren.users.exception.EmailAlreadyExistsException;
-import com.geren.users.exception.ErroCadastro;
-import com.geren.users.exception.NotFound;
-import com.geren.users.exception.PasswordIncorreta;
+import com.geren.users.exception.*;
 import com.geren.users.model.User;
 import com.geren.users.dto.UserDTO;
 import com.geren.users.repository.UserRepository;
 import com.geren.users.service.AuthenticationService;
 import com.geren.users.service.UserService;
+import com.geren.users.utils.AuthenticationFacade;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +34,11 @@ public class UserServiceImp implements UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AuthenticationService authenticationService;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private FakeEmailService fakeEmailService;
+
 
     @Override
     public void createUser(UserDTO userDTO) {
@@ -80,10 +85,38 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public String generateResetToken(UUID id) {
-        return "";
+    public void generateResetToken(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+
+            String token = UUID.randomUUID().toString();
+
+            user.setResetToken(token);
+            user.setResetTokenExpiration(
+                    LocalDateTime.now().plusMinutes(15)
+            );
+
+            userRepository.save(user);
+
+            fakeEmailService.sendResetEmail(email,token);
+        });
     }
 
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new ErrorTokenException("Token inválido"));
+
+        if (user.getResetTokenExpiration()
+                .isBefore(LocalDateTime.now())) {
+            throw new ErrorTokenException("Token expirado");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiration(null);
+
+        userRepository.save(user);
+    }
 
     @Override
     public List<User> getAllUsers() {
@@ -105,9 +138,10 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public void deleteUser(UUID id) {
-        if (userRepository.existsById(id)) {
-            throw new NotFound("Usuario não encontrado");
+    public void deleteUser() {
+        var id = authenticationFacade.getCurrentUser().getId();
+        if (!userRepository.existsById(id)) {
+            throw new NotFound("Não foi possivel deletar usuario.");
         }
         userRepository.deleteById(id);
     }
