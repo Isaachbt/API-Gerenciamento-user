@@ -36,16 +36,4 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    @DeleteMapping("delete/{id}")
-    public ResponseEntity<Object> deleteUser(@PathVariable UUID id){
-        try {
-            userService.deleteUser(id);
-            return ResponseEntity.status(HttpStatus.OK).build();
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-
 }
