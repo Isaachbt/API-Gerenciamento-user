@@ -24,6 +24,8 @@ import java.time.ZoneOffset;
 
 @Service
 public class AuthenticationServiceImp implements AuthenticationService {
+    private static final String ISSUER = "API Gerenciamento user";
+    private static final String SECRET = "my-secret";
 
     @Autowired
     private UserRepository repository;
@@ -57,9 +59,9 @@ public class AuthenticationServiceImp implements AuthenticationService {
     public String validToken(String token) {
         try{
 
-            Algorithm algorithm = Algorithm.HMAC256("my-secret");
+            Algorithm algorithm = Algorithm.HMAC256(SECRET);
             return JWT.require(algorithm)
-                    .withIssuer("gerenciar-biblioteca-spring")
+                    .withIssuer(ISSUER)
                     .build()
                     .verify(token)
                     .getSubject();
@@ -72,9 +74,9 @@ public class AuthenticationServiceImp implements AuthenticationService {
     public String gerarTokenJwt(User user) {
         try{
 
-            Algorithm algorithm = Algorithm.HMAC256("my-secret");
+            Algorithm algorithm = Algorithm.HMAC256(SECRET);
             return JWT.create()
-                    .withIssuer("API Gerenciamento user")
+                    .withIssuer(ISSUER)
                     .withSubject(user.getEmail())
                     .withExpiresAt(gerarDateExpiracao())
                     .sign(algorithm);

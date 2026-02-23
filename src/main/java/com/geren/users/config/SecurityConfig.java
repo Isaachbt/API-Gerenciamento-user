@@ -28,13 +28,15 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST,"/auth/**").permitAll()
-                        //.requestMatchers(HttpMethod.GET, "setup/**").hasRole("USER")
-//                      .requestMatchers(HttpMethod.GET, "setup/my-biblioteca").hasRole("USER")
-                        //.requestMatchers(HttpMethod.DELETE,"/setup/**").hasRole("USER")
-                        //.requestMatchers(HttpMethod.PUT,"/setup/**").hasRole("USER")
-//                        .requestMatchers(HttpMethod.POST,"auth/login").permitAll()
-
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/creatUser",
+                                "/auth/login",
+                                "/auth/forgot-password",
+                                "/auth/reset-password"
+                        ).permitAll()
+                       .requestMatchers(HttpMethod.GET,"/user/getAllUser").hasRole("USER")
+                       .requestMatchers(HttpMethod.GET,"/user/getOneUser/{id}").hasRole("USER")
+                       .requestMatchers(HttpMethod.DELETE,"/auth/delete-user").hasRole("USER")
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
