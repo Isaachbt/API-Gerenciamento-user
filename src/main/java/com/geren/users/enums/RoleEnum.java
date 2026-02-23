@@ -1,8 +1,8 @@
 package com.geren.users.enums;
 
 public enum RoleEnum {
-    ADMIN("admin"),
-    USER("user");
+    ADMIN("ADMIN"),
+    USER("USER");
 
     private String role;
 
