@@ -3,18 +3,18 @@ package com.geren.users.exception.advice;
 import com.geren.users.dto.ErrorResponse;
 import com.geren.users.exception.EmailAlreadyExistsException;
 import com.geren.users.exception.ErroCadastro;
+import com.geren.users.exception.ErrorTokenException;
+import com.geren.users.exception.NotFound;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class ControllerAdvice {
-
 
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -62,6 +62,35 @@ public class ControllerAdvice {
                 .body(error);
     }
 
+    @ExceptionHandler(ErrorTokenException.class)
+    public ResponseEntity<ErrorResponse> errorToken(ErrorTokenException ex, HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                ex.getMessage(),
+                HttpStatus.CONFLICT.value(),
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
+
+    @ExceptionHandler(NotFound.class)
+    public ResponseEntity<ErrorResponse> notfound(NotFound ex, HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
 
 
 }
