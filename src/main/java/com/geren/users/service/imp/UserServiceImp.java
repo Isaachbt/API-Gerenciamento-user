@@ -1,6 +1,7 @@
 package com.geren.users.service.imp;
 
 import com.geren.users.dto.LoginDTO;
+import com.geren.users.dto.UserResponseDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.*;
 import com.geren.users.model.User;
@@ -119,17 +120,15 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    @Override
-    public User getUserById(UUID id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isEmpty()) {
+    public UserResponseDTO profile() {
+        Optional<User> userOptional = userRepository.findById(authenticationFacade.getCurrentUser().getId());
+        if (userOptional.isEmpty()) {
             throw new NotFound("Usuario não encontrado");
         }
-        return user.get();
+        User user = userOptional.get();
+
+        return new UserResponseDTO(user.getId(),user.getName(),user.getCpf(),user.getDataNascimento(),
+                user.getEmail(),user.getRole(),user.isOnline());
     }
 
     @Override
