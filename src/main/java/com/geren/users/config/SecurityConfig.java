@@ -34,8 +34,7 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/reset-password"
                         ).permitAll()
-                       .requestMatchers(HttpMethod.GET,"/user/getAllUser").hasRole("USER")
-                       .requestMatchers(HttpMethod.GET,"/user/getOneUser/{id}").hasRole("USER")
+                       .requestMatchers(HttpMethod.GET,"/user/profile").hasRole("USER")
                        .requestMatchers(HttpMethod.DELETE,"/auth/delete-user").hasRole("USER")
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
