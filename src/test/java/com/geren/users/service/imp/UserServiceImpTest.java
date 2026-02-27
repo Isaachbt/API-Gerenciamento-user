@@ -5,6 +5,7 @@ import com.geren.users.dto.UserDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.EmailAlreadyExistsException;
 import com.geren.users.exception.ErroCadastro;
+import com.geren.users.exception.NotFound;
 import com.geren.users.model.User;
 import com.geren.users.repository.UserRepository;
 import com.geren.users.service.AuthenticationService;
@@ -43,6 +44,8 @@ class UserServiceImpTest {
     private AuthenticationService authenticationService;
     @Mock
     private AuthenticationManager authenticationManager;
+    @Mock
+    private AuthenticationFacade authenticationFacade;
     private UserDTO  userDTO;
     private LoginDTO loginDTO;
 
@@ -137,22 +140,39 @@ class UserServiceImpTest {
     }
 
     @Test
+    void deleteUserSucesso() {
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
+
+        Mockito.when(userRepository.existsById(Mockito.any())).thenReturn(true);
+
+        userService.deleteUser();
+        Mockito.verify(userRepository)
+                .deleteById(Mockito.any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenExistByIdDeleteFails(){
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
+        Mockito.when(userRepository.existsById(Mockito.any())).thenReturn(false);
+
+        assertThrows(NotFound.class,() -> userService.deleteUser());
+        Mockito.verify(userRepository,Mockito.never()).deleteById(Mockito.any());
+    }
+
+    @Test
+    void getProfileSucess() {
+    }
+
+    @Test
+    void updateUserSucesso() {
+
+    }
+
+    @Test
     void generateResetToken() {
     }
 
     @Test
     void resetPassword() {
-    }
-
-    @Test
-    void profile() {
-    }
-
-    @Test
-    void updateUser() {
-    }
-
-    @Test
-    void deleteUser() {
     }
 }
