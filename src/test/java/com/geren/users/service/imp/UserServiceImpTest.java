@@ -161,18 +161,30 @@ class UserServiceImpTest {
 
     @Test
     void getProfileSucess() {
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.of(new User()));
+
+        var profile = userService.profile();
+
+        assertNotNull(profile);
     }
 
     @Test
+    void shouldThrowExceptionWhenUserNotFound(){
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.empty());
+        assertThrows(NotFound.class,() -> userService.profile());
+    }
+
     void updateUserSucesso() {
 
     }
 
-    @Test
+
     void generateResetToken() {
     }
 
-    @Test
+
     void resetPassword() {
     }
 }
