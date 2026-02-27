@@ -1,12 +1,15 @@
 package com.geren.users.service.imp;
 
+import com.geren.users.dto.LoginDTO;
 import com.geren.users.dto.UserDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.EmailAlreadyExistsException;
 import com.geren.users.exception.ErroCadastro;
 import com.geren.users.model.User;
 import com.geren.users.repository.UserRepository;
+import com.geren.users.service.AuthenticationService;
 import com.geren.users.service.UserService;
+import com.geren.users.utils.AuthenticationFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -32,7 +39,13 @@ class UserServiceImpTest {
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private AuthenticationService authenticationService;
+    @Mock
+    private AuthenticationManager authenticationManager;
     private UserDTO  userDTO;
+    private LoginDTO loginDTO;
+
 
 
     @BeforeEach
@@ -43,6 +56,8 @@ class UserServiceImpTest {
                 LocalDate.of(2010, 5,20),
                 "dto@gmail.com",
                 "12345678");
+
+        loginDTO = new LoginDTO(userDTO.email(),  userDTO.password());
     }
 
     @Test
@@ -92,7 +107,33 @@ class UserServiceImpTest {
     }
 
     @Test
-    void login() {
+    void loginSuccess() {
+
+        Mockito.when(userRepository.findByEmail(loginDTO.email()))
+                .thenReturn(Optional.of(new User()));
+
+        Authentication authentication = Mockito.mock(Authentication.class);
+
+        Mockito.when(authenticationManager.authenticate(Mockito.any()))
+                .thenReturn(authentication);
+
+        String fakeToken = "token-123";
+
+        Mockito.when(authenticationService.login(loginDTO))
+                .thenReturn(fakeToken);
+
+        String result = userService.login(loginDTO);
+
+        assertEquals(fakeToken, result);
+    }
+
+    @Test
+    void shouldThrowBadCredentialsExceptionWhenLoginFails() {
+        Mockito.doThrow(new BadCredentialsException("Bad credentials"))
+                .when(authenticationManager)
+                .authenticate(Mockito.any());
+
+        assertThrows(BadCredentialsException.class,() -> userService.login(loginDTO));
     }
 
     @Test
