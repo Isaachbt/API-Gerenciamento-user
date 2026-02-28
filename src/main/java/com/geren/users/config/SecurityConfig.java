@@ -34,6 +34,10 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/reset-password"
                         ).permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                        .requestMatchers(HttpMethod.GET,"/user/profile").hasRole("USER")
                        .requestMatchers(HttpMethod.DELETE,"/auth/delete-user").hasRole("USER")
                         .anyRequest().authenticated())
