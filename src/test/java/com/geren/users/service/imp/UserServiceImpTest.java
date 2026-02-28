@@ -2,6 +2,7 @@ package com.geren.users.service.imp;
 
 import com.geren.users.dto.LoginDTO;
 import com.geren.users.dto.UserDTO;
+import com.geren.users.dto.UserUpdateDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.EmailAlreadyExistsException;
 import com.geren.users.exception.ErroCadastro;
@@ -16,9 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,7 +46,7 @@ class UserServiceImpTest {
     private AuthenticationFacade authenticationFacade;
     private UserDTO  userDTO;
     private LoginDTO loginDTO;
-
+    private UserUpdateDTO  userUpdateDTO;
 
 
     @BeforeEach
@@ -61,6 +59,9 @@ class UserServiceImpTest {
                 "12345678");
 
         loginDTO = new LoginDTO(userDTO.email(),  userDTO.password());
+        userUpdateDTO = new UserUpdateDTO(userDTO.name(), userDTO.cpf(), userDTO.dataNascimento(), userDTO.email());
+
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
     }
 
     @Test
@@ -171,20 +172,31 @@ class UserServiceImpTest {
 
     @Test
     void shouldThrowExceptionWhenUserNotFound(){
-        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.empty());
         assertThrows(NotFound.class,() -> userService.profile());
     }
 
+    @Test
     void updateUserSucesso() {
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.of(new User()));
+
+        userService.updateUser(userUpdateDTO);
+        Mockito.verify(userRepository).save(Mockito.any(User.class));
+
 
     }
 
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundUpdate(){
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.empty());
+        assertThrows(NotFound.class,() -> userService.updateUser(userUpdateDTO));
 
+    }
+
+    @Test
     void generateResetToken() {
+
     }
-
-
     void resetPassword() {
     }
 }
