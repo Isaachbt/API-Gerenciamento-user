@@ -6,6 +6,7 @@ import com.geren.users.dto.UserUpdateDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.EmailAlreadyExistsException;
 import com.geren.users.exception.ErroCadastro;
+import com.geren.users.exception.ErrorTokenException;
 import com.geren.users.exception.NotFound;
 import com.geren.users.model.User;
 import com.geren.users.repository.UserRepository;
@@ -24,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,6 +46,8 @@ class UserServiceImpTest {
     private AuthenticationManager authenticationManager;
     @Mock
     private AuthenticationFacade authenticationFacade;
+    @Mock
+    private FakeEmailService fakeEmailService;
     private UserDTO  userDTO;
     private LoginDTO loginDTO;
     private UserUpdateDTO  userUpdateDTO;
@@ -61,7 +65,7 @@ class UserServiceImpTest {
         loginDTO = new LoginDTO(userDTO.email(),  userDTO.password());
         userUpdateDTO = new UserUpdateDTO(userDTO.name(), userDTO.cpf(), userDTO.dataNascimento(), userDTO.email());
 
-        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
+
     }
 
     @Test
@@ -96,7 +100,6 @@ class UserServiceImpTest {
     @Test
     void shouldThrowErroCadastroWhenSaveFails(){
         Mockito.when(userRepository.existsByEmail(userDTO.email())).thenReturn(false);
-
         Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("hashedPassword");
         Mockito.doThrow(new RuntimeException("Erro banco"))
                 .when(userRepository)
@@ -106,7 +109,7 @@ class UserServiceImpTest {
                 ErroCadastro.class,() -> userService.createUser(userDTO)
         );
 
-        assertEquals("Não foi possivl cadastrar usuario.",exception.getMessage());
+        assertEquals("Não foi possivel cadastrar usuario.",exception.getMessage());
 
     }
 
@@ -172,12 +175,14 @@ class UserServiceImpTest {
 
     @Test
     void shouldThrowExceptionWhenUserNotFound(){
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.empty());
         assertThrows(NotFound.class,() -> userService.profile());
     }
 
     @Test
     void updateUserSucesso() {
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.of(new User()));
 
         userService.updateUser(userUpdateDTO);
@@ -188,15 +193,94 @@ class UserServiceImpTest {
 
     @Test
     void shouldThrowExceptionWhenUserNotFoundUpdate(){
+        Mockito.when(authenticationFacade.getCurrentUser()).thenReturn(new User());
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.empty());
         assertThrows(NotFound.class,() -> userService.updateUser(userUpdateDTO));
 
     }
 
     @Test
-    void generateResetToken() {
+    void shouldGenerateResetTokenWhenUserExists() {
+        var user = new User();
+        user.setEmail(userDTO.email());
+        Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+        userService.generateResetToken(user.getEmail());
+        Mockito.verify(userRepository).save(user);
+
+        Mockito.verify(fakeEmailService).sendResetEmail(Mockito.eq(user.getEmail()),Mockito.anyString());
+
+        assertTrue(user.getResetTokenExpiration().isAfter(LocalDateTime.now()));
+        assertNotNull(user.getResetToken());
+        assertNotNull(user.getResetTokenExpiration());
+
+
 
     }
-    void resetPassword() {
+
+    @Test
+    void shouldDoNothingWhenUserDoesNotExist() {
+
+        Mockito.when(userRepository.findByEmail("dto@gmail.com"))
+                .thenReturn(Optional.empty());
+
+        userService.generateResetToken("dto@gmail.com");
+
+        Mockito.verify(userRepository, Mockito.never())
+                .save(Mockito.any());
+
+        Mockito.verify(fakeEmailService, Mockito.never())
+                .sendResetEmail(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTokenIsInvalid() {
+
+        Mockito.when(userRepository.findByResetToken("token123"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ErrorTokenException.class,
+                () -> userService.resetPassword("token123", "novaSenha"));
+
+        Mockito.verify(userRepository, Mockito.never())
+                .save(Mockito.any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTokenIsExpired() {
+
+        User user = new User();
+        user.setResetTokenExpiration(LocalDateTime.now().minusMinutes(1));
+
+        Mockito.when(userRepository.findByResetToken("token123"))
+                .thenReturn(Optional.of(user));
+
+        assertThrows(ErrorTokenException.class,
+                () -> userService.resetPassword("token123", "novaSenha"));
+
+        Mockito.verify(userRepository, Mockito.never())
+                .save(Mockito.any());
+    }
+
+    @Test
+    void shouldResetPasswordSuccessfully() {
+
+        User user = new User();
+        user.setResetToken("token123");
+        user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(10));
+
+        Mockito.when(userRepository.findByResetToken("token123"))
+                .thenReturn(Optional.of(user));
+
+        Mockito.when(passwordEncoder.encode("novaSenha"))
+                .thenReturn("senhaCriptografada");
+
+        userService.resetPassword("token123", "novaSenha");
+
+        assertEquals("senhaCriptografada", user.getPassword());
+        assertNull(user.getResetToken());
+        assertNull(user.getResetTokenExpiration());
+
+        Mockito.verify(userRepository).save(user);
     }
 }
