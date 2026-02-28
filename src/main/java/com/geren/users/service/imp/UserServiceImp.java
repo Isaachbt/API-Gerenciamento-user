@@ -2,6 +2,7 @@ package com.geren.users.service.imp;
 
 import com.geren.users.dto.LoginDTO;
 import com.geren.users.dto.UserResponseDTO;
+import com.geren.users.dto.UserUpdateDTO;
 import com.geren.users.enums.RoleEnum;
 import com.geren.users.exception.*;
 import com.geren.users.model.User;
@@ -20,7 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,7 +56,7 @@ public class UserServiceImp implements UserService {
         try{
             userRepository.save(authUser);
         }catch (Exception e){
-            throw new ErroCadastro("Não foi possivl cadastrar usuario.");
+            throw new ErroCadastro("Não foi possivel cadastrar usuario.");
         }
     }
 
@@ -65,10 +65,7 @@ public class UserServiceImp implements UserService {
         try {
 
             var authenticationToken =
-                    new UsernamePasswordAuthenticationToken(
-                            loginDTO.email(),
-                            loginDTO.password()
-                    );
+                    new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.password());
 
             authenticationManager.authenticate(authenticationToken);
 
@@ -132,13 +129,30 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public User updateUser(UUID id, UserDTO userDTO) {
-        return null;
+    public void updateUser(UserUpdateDTO dto) {
+
+        var id = authenticationFacade.getCurrentUser().getId();
+
+        if(userRepository.findById(id).isEmpty()){
+            throw new NotFound("Usuario inexistente");
+        }
+
+        try{
+            var saveUser = new User();
+            BeanUtils.copyProperties(dto, saveUser);
+            saveUser.setId(id);
+            saveUser.setPassword(authenticationFacade.getCurrentUser().getPassword());
+            saveUser.setRole(authenticationFacade.getCurrentUser().getRole());
+            userRepository.save(saveUser);
+        }catch (Exception e){
+            throw new ErroCadastro("Não foi possivl atualizar usuario.");
+        }
     }
 
     @Override
     public void deleteUser() {
         var id = authenticationFacade.getCurrentUser().getId();
+
         if (!userRepository.existsById(id)) {
             throw new NotFound("Não foi possivel deletar usuario.");
         }

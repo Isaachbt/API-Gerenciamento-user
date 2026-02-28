@@ -1,9 +1,6 @@
 package com.geren.users.controler;
 
-import com.geren.users.dto.ForgotPasswordDTO;
-import com.geren.users.dto.LoginDTO;
-import com.geren.users.dto.ResetPasswordDTO;
-import com.geren.users.dto.UserDTO;
+import com.geren.users.dto.*;
 import com.geren.users.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +49,12 @@ public class AuthenticationController {
     public ResponseEntity<Object> deleteUser(){
         userService.deleteUser();
         return ResponseEntity.status(HttpStatus.OK).body("Usuario deletado com sucesso.");
+    }
+
+    @PutMapping("update")
+    public ResponseEntity<Object> updateUser(@RequestBody @Valid UserUpdateDTO dto){
+        userService.updateUser(dto);
+        return ResponseEntity.ok("Usuario atualizado com sucesso.");
     }
 
 }
