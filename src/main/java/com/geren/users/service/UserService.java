@@ -2,6 +2,7 @@ package com.geren.users.service;
 
 import com.geren.users.dto.LoginDTO;
 import com.geren.users.dto.UserResponseDTO;
+import com.geren.users.dto.UserUpdateDTO;
 import com.geren.users.model.User;
 import com.geren.users.dto.UserDTO;
 
@@ -15,6 +16,6 @@ public interface UserService {
     void generateResetToken(String email);
     public void resetPassword(String token, String newPassword);
     UserResponseDTO profile();
-    User updateUser(UUID id, UserDTO userDTO);
+    void updateUser(UserUpdateDTO dto);
     void deleteUser();
 }
